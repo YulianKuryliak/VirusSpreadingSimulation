@@ -28,15 +28,13 @@ arrays:
 def get_contagious_contacts(network):
     contagious_of_contacts = (
         network.adjacency_matrix.dot(
-            network.contagiousness_of_nodes * network.contagious_nodes
-            )).T[0] * (
-                network.susceptibility_of_nodes * network.susceptible_nodes
-                )
+            network.susceptibility_of_nodes * network.susceptible_nodes
+            )).T[0] * (network.contagiousness_of_nodes * network.contagious_nodes)
     #print(sum(contagious_of_contacts))
     return contagious_of_contacts
 
 
-def infication_roulette_wheel_choise(contagious_contacts, contagious_contacts_concentration):
+def infication_roulette_wheel_choise(network, contagious_contacts, contagious_contacts_concentration):
     probabilities = contagious_contacts / contagious_contacts_concentration
     if(contagious_contacts_concentration <= 0):
         print("ERROR: Contagious_contacts_concentration <= 0")
@@ -48,7 +46,12 @@ def infication_roulette_wheel_choise(contagious_contacts, contagious_contacts_co
         previous_sumprob = sumprob
         sumprob += probabilities[i]
         if(previous_sumprob <= inficate and inficate < sumprob):
-            return i
+            network.infected_by_nodes[i] += 1
+            contact_for_infication = np.random.randint(0, contagious_contacts[i], 1)
+            indexes_of_possible_nodes = np.argwhere(np.multiply(network.adjacency_matrix[i], network.susceptible_nodes.T[0]) == 1)
+            #print(indexes_of_possible_nodes)
+            #print("\n\n\n\nneeded value: ", indexes_of_possible_nodes[contact_for_infication][0][0], type( indexes_of_possible_nodes[contact_for_infication][0][0]), "\n\n\n")
+            return  indexes_of_possible_nodes[contact_for_infication][0][0]
 
 
 def get_time_to_infication(contagious_contacts_concentration, infection_rate):
@@ -62,8 +65,8 @@ def get_time_to_infication(contagious_contacts_concentration, infection_rate):
 def infication(index_node_for_infication, infication_time, network, death_note):
     prob_of_death = 0.01820518643617639 + 0.2
     network.infected_nodes[index_node_for_infication] = 1
-    network.susceptible_nodes[index_node_for_infication] = 0
-    network.contagious_nodes[index_node_for_infication][0] = 1
+    network.susceptible_nodes[index_node_for_infication][0] = 0
+    network.contagious_nodes[index_node_for_infication] = 1
     network.times_node_infication[index_node_for_infication] = infication_time
     if(np.random.uniform(0.0, 1.0) <= network.death_probabilities[i]):
         death_note[index_node_for_infication] = 1 #die with probability
@@ -76,7 +79,7 @@ def CTMC(network, death_note, treatment_time, critically_treatment_time, infecti
     if(contagious_contacts_concentration <= 0):
         # what can i do?
         pass
-    index_node_for_infication = infication_roulette_wheel_choise(contagious_contacts,contagious_contacts_concentration)
+    index_node_for_infication = infication_roulette_wheel_choise(network, contagious_contacts,contagious_contacts_concentration)
     infication(index_node_for_infication, time, network, death_note)
     return get_time_to_infication(sum(get_contagious_contacts(network)), infection_rate)
 
@@ -97,11 +100,11 @@ def do_actions(time, network, death_note, treatment_time, critically_treatment_t
     for i in range(len(network.infected_nodes)):
         if(network.infected_nodes[i] == 1 and death_note[i] == 1 and time >= network.times_node_infication[i]+critically_treatment_time):
             network.infected_nodes[i] = 0
-            network.susceptible_nodes[i] = 0
+            network.susceptible_nodes[i][0] = 0
             network.contagious_nodes[i] = 0
         if(network.infected_nodes[i] == 1 and death_note[i] == 0 and time >= network.times_node_infication[i]+treatment_time):
             network.infected_nodes[i] = 0
-            network.susceptible_nodes[i] = 0
+            network.susceptible_nodes[i][0] = 0
             network.contagious_nodes[i] = 0
     #print("infected_nodes: ", infected_nodes)
     #print(treatment_time)
@@ -109,8 +112,8 @@ def do_actions(time, network, death_note, treatment_time, critically_treatment_t
 
 def get_states_info(network, death_note):
     amount_of_infected = sum(network.infected_nodes)
-    amount_of_susceptible = sum(network.susceptible_nodes)
-    amount_of_contagious = sum(network.contagious_nodes.T[0])
+    amount_of_susceptible = sum(network.susceptible_nodes.T[0])
+    amount_of_contagious = sum(network.contagious_nodes)
     amount_of_critically_infected = sum([1 for have_to_die, infected in zip(death_note, network.infected_nodes) if(have_to_die == 1 and infected == 1)])
     amount_of_dead = sum([1 for have_to_die, infected in zip(death_note, network.infected_nodes) if(have_to_die == 1 and infected == 0)])
     return amount_of_infected, amount_of_susceptible, amount_of_contagious, amount_of_critically_infected, amount_of_dead
@@ -160,21 +163,23 @@ def simulation(graph_size, network_type, amount_of_contacts, infection_rate, num
             #graph = igraph.Graph.Adjacency(network.adjacency_matrix, mode = "undirected")
             #igraph.plot(graph, " /run/media/fedora_user/31614d99-e16f-45e1-8be5-e21723cf8199/projects/ManagingEpidemicOutbreak/Python-v.0.1/test.png")
 
+    print(network.infected_by_nodes)
+
     print("all time: ", time.time() - all_time)
     with open(path + str(i) + '.txt', 'w') as file:
         for row in states_info:
             file.write(','.join([str(a) for a in row]) + '\n')
 
-graph_size = (10 ** 2) * 5
-network_type = 'Complete' #'Barabasi', 'Complete'
-amount_of_contacts_set = [100]#,2,4,10]
+graph_size = (10 ** 3) * 1
+network_type = 'Barabasi' #'Barabasi', 'Complete'
+amount_of_contacts_set = [10]#,2,4,10]
 if network_type == 'Complete':
     amount_of_contacts_set = [0]
-infection_rate_set = [0.2]#, 0.05, 0.1, 0.5]
+infection_rate_set = [0.02]#, 0.05, 0.1, 0.5]
 number_of_infications = 1
 max_time = 100
 time_step = 1
-amount_of_simulations = 1
+amount_of_simulations = 100
 amount_of_nodes_for_imunization_set = [int(graph_size * fraction) for fraction in [0.01]]#, 0.05, 0.1, 0.2]]
 
 
