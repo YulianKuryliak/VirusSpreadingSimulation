@@ -15,9 +15,9 @@ def __cumulative_data_prob(data):
         data[i]["cumulative"] = data[i]["probability"] + data[i-1]["cumulative"]
 
 
-def get_population():
-    data_men = __get_data("/run/media/fedora_user/31614d99-e16f-45e1-8be5-e21723cf8199/projects/ManagingEpidemicOutbreak/Python-v.0.1/datasets/ukraine(16December2020)", "men_total_data.csv")
-    data_women = __get_data("/run/media/fedora_user/31614d99-e16f-45e1-8be5-e21723cf8199/projects/ManagingEpidemicOutbreak/Python-v.0.1/datasets/ukraine(16December2020)", "women_total_data.csv")
+def get_population(dir = "/home/data/projects/ManagingEpidemicOutbreak/Python-v.0.1/datasets/ukraine(16December2020)"):
+    data_men = __get_data(dir, "men_total_data.csv")
+    data_women = __get_data(dir, "women_total_data.csv")
 
     amount = 0
     for i in range(1,len(data_men)):

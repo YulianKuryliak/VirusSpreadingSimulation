@@ -13,8 +13,8 @@ class Network:
 
     def __init_disease_info(self):
         self.infected_nodes = [0 for i in range(self.size)]
-        self.susceptible_nodes = np.array([[1] for i in range(self.size)])
-        self.contagious_nodes = np.array([0 for i in range(self.size)])
+        self.susceptible_nodes = np.array([1 for i in range(self.size)])
+        self.contagious_nodes = np.array([[0] for i in range(self.size)])
         self.times_node_infication = [-1] * self.size
         self.ages = [-1 for i in range(self.size)]
         self.genders = ['U' for i in range(self.size)]
@@ -22,7 +22,6 @@ class Network:
         self.contagiousness_of_nodes = np.array([1 for i in range(self.size)])
         self.susceptibility_of_nodes = np.array([[1] for i in range(self.size)])
         self.infected_by_nodes = np.array([0 for i in range(self.size)])
-        self.colors = ['#FFFFFF']
 
 
 # canon [{???'method': , 'influence_susceptibility': , 'influence_contagiousness': , 'amount': }, ...]
